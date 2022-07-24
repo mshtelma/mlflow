@@ -393,7 +393,7 @@ _MAKEFILE_FORMAT_STRING = r"""
 # invokes the MLflow Pipelines ingest step, allowing them to reingest data on-demand
 ingest:
 	cd {path:prp/} && \
-        python -c "from mlflow.pipelines.steps.ingest import IngestStep; IngestStep.from_step_config_path(step_config_path='{path:exe/steps/ingest/conf.yaml}', pipeline_root='{path:prp/}').run(output_directory='{path:exe/steps/ingest/outputs}')"
+        python -c "from mlflow.pipelines.steps import make_execute_step; make_execute_step(step_name='ingest', step_config_path='{path:exe/steps/ingest/conf.yaml}', pipeline_root='{path:prp/}', output_directory='{path:exe/steps/ingest/outputs}')"
 
 # Define a separate target for the ingested dataset that recursively invokes make with the `ingest`
 # target. Downstream steps depend on the ingested dataset target, rather than the `ingest` target,
@@ -408,7 +408,7 @@ split: $(split_objects)
 
 steps/%/outputs/train.parquet steps/%/outputs/validation.parquet steps/%/outputs/test.parquet: {path:prp/steps/split.py} steps/ingest/outputs/dataset.parquet steps/split/conf.yaml
 	cd {path:prp/} && \
-        python -c "from mlflow.pipelines.steps.split import SplitStep; SplitStep.from_step_config_path(step_config_path='{path:exe/steps/split/conf.yaml}', pipeline_root='{path:prp/}').run(output_directory='{path:exe/steps/split/outputs}')"
+        python -c "from mlflow.pipelines.steps import make_execute_step; make_execute_step(step_name='split', step_config_path='{path:exe/steps/split/conf.yaml}', pipeline_root='{path:prp/}', output_directory='{path:exe/steps/split/outputs}')"
 
 transform_objects = steps/transform/outputs/transformer.pkl steps/transform/outputs/transformed_training_data.parquet steps/transform/outputs/transformed_validation_data.parquet
 
@@ -416,7 +416,7 @@ transform: $(transform_objects)
 
 steps/%/outputs/transformer.pkl steps/%/outputs/transformed_training_data.parquet steps/%/outputs/transformed_validation_data.parquet: {path:prp/steps/transform.py} steps/split/outputs/train.parquet steps/split/outputs/validation.parquet steps/transform/conf.yaml
 	cd {path:prp/} && \
-        python -c "from mlflow.pipelines.steps.transform import TransformStep; TransformStep.from_step_config_path(step_config_path='{path:exe/steps/transform/conf.yaml}', pipeline_root='{path:prp/}').run(output_directory='{path:exe/steps/transform/outputs}')"
+        python -c "from mlflow.pipelines.steps import make_execute_step; make_execute_step(step_name='transform', step_config_path='{path:exe/steps/transform/conf.yaml}', pipeline_root='{path:prp/}', output_directory='{path:exe/steps/transform/outputs}')"
 
 train_objects = steps/train/outputs/model steps/train/outputs/run_id
 
@@ -424,7 +424,7 @@ train: $(train_objects)
 
 steps/%/outputs/model steps/%/outputs/run_id: {path:prp/steps/train.py} {path:prp/steps/custom_metrics.py} steps/transform/outputs/transformed_training_data.parquet steps/transform/outputs/transformed_validation_data.parquet steps/split/outputs/train.parquet steps/split/outputs/validation.parquet steps/transform/outputs/transformer.pkl steps/train/conf.yaml
 	cd {path:prp/} && \
-        python -c "from mlflow.pipelines.steps.train import TrainStep; TrainStep.from_step_config_path(step_config_path='{path:exe/steps/train/conf.yaml}', pipeline_root='{path:prp/}').run(output_directory='{path:exe/steps/train/outputs}')"
+        python -c "from mlflow.pipelines.steps import make_execute_step; make_execute_step(step_name='train', step_config_path='{path:exe/steps/train/conf.yaml}', pipeline_root='{path:prp/}', output_directory='{path:exe/steps/train/outputs}')"
 
 evaluate_objects = steps/evaluate/outputs/model_validation_status
 
@@ -432,7 +432,7 @@ evaluate: $(evaluate_objects)
 
 steps/%/outputs/model_validation_status: {path:prp/steps/custom_metrics.py} steps/train/outputs/model steps/split/outputs/validation.parquet steps/split/outputs/test.parquet steps/train/outputs/run_id steps/evaluate/conf.yaml
 	cd {path:prp/} && \
-        python -c "from mlflow.pipelines.steps.evaluate import EvaluateStep; EvaluateStep.from_step_config_path(step_config_path='{path:exe/steps/evaluate/conf.yaml}', pipeline_root='{path:prp/}').run(output_directory='{path:exe/steps/evaluate/outputs}')"
+        python -c "from mlflow.pipelines.steps import make_execute_step; make_execute_step(step_name='evaluate', step_config_path='{path:exe/steps/evaluate/conf.yaml}', pipeline_root='{path:prp/}', output_directory='{path:exe/steps/evaluate/outputs}')"
 
 register_objects = steps/register/outputs/registered_model_version.json
 
@@ -440,7 +440,7 @@ register: $(register_objects)
 
 steps/%/outputs/registered_model_version.json: steps/train/outputs/run_id steps/register/conf.yaml steps/evaluate/outputs/model_validation_status
 	cd {path:prp/} && \
-        python -c "from mlflow.pipelines.steps.register import RegisterStep; RegisterStep.from_step_config_path(step_config_path='{path:exe/steps/register/conf.yaml}', pipeline_root='{path:prp/}').run(output_directory='{path:exe/steps/register/outputs}')"
+        python -c "from mlflow.pipelines.steps import make_execute_step; make_execute_step(step_name='register', step_config_path='{path:exe/steps/register/conf.yaml}', pipeline_root='{path:prp/}', output_directory='{path:exe/steps/register/outputs}')"
 
 clean:
 	rm -rf $(split_objects) $(transform_objects) $(train_objects) $(evaluate_objects)

@@ -98,7 +98,7 @@ The pipeline steps are defined as follows:
 .. |steps/transform.py| replace:: `steps/transform.py <https://github.com/mlflow/mlp-regression-template/blob/main/steps/transform.py>`__
 .. |steps/custom_metrics.py| replace:: `steps/custom_metrics.py <https://github.com/mlflow/mlp-regression-template/blob/main/steps/custom_metrics.py>`__
 """
-
+import importlib
 import os
 import logging
 
@@ -160,6 +160,23 @@ class RegressionPipeline(_BasePipeline):
     """
 
     _PIPELINE_STEPS = (IngestStep, SplitStep, TransformStep, TrainStep, EvaluateStep, RegisterStep)
+
+    def _resolve_pipeline_step_classes(self):
+        self.resolved_steps = []
+        for cls in self._PIPELINE_STEPS:
+            step = cls.from_pipeline_config(self._pipeline_config, self._pipeline_root_path)
+            step_uses = step.step_config.get("uses")
+            if step_uses is not None:
+                step_module_name, step_class_name = step_uses.rsplit(".", 1)
+                step_class = getattr(importlib.import_module(step_module_name), step_class_name)
+                self.resolved_steps.append(step_class)
+            else:
+                step_fqclass = f"{step.__class__.__module__}.{step.__class__.__qualname__}"
+                self.resolved_steps.append(step.__class__)
+                if step.name == "ingest":
+                    self._pipeline_config["data"]["uses"] = step_fqclass
+                else:
+                    self._pipeline_config["steps"][step.name]["uses"] = step_fqclass
 
     def _get_step_classes(self) -> List[BaseStep]:
         return self._PIPELINE_STEPS

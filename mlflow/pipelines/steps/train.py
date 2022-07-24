@@ -39,9 +39,10 @@ class TrainStep(BaseStep):
         super().__init__(step_config, pipeline_root)
         self.tracking_config = TrackingConfig.from_dict(step_config)
         self.target_col = self.step_config.get("target_col")
-        self.train_module_name, self.estimator_method_name = self.step_config[
-            "estimator_method"
-        ].rsplit(".", 1)
+        if self.step_config.get("estimator_method") is not None:
+            self.train_module_name, self.estimator_method_name = self.step_config[
+                "estimator_method"
+            ].rsplit(".", 1)
         self.primary_metric = _get_primary_metric(self.step_config)
         self.evaluation_metrics = {metric.name: metric for metric in BUILTIN_PIPELINE_METRICS}
         self.evaluation_metrics.update(

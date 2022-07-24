@@ -40,6 +40,7 @@ MetricValidationResult = namedtuple(
 class EvaluateStep(BaseStep):
     def __init__(self, step_config: Dict[str, Any], pipeline_root: str) -> None:
         super().__init__(step_config, pipeline_root)
+        self.task_type = "regression"
         self.tracking_config = TrackingConfig.from_dict(self.step_config)
         self.target_col = self.step_config.get("target_col")
         self.model_validation_status = "UNKNOWN"
@@ -152,7 +153,7 @@ class EvaluateStep(BaseStep):
                     model=model_uri,
                     data=dataset,
                     targets=self.target_col,
-                    model_type="regressor",
+                    model_type="regressor" if self.task_type == "regression" else "classifier",
                     evaluators="default",
                     dataset_name=dataset_name,
                     custom_metrics=_load_custom_metric_functions(

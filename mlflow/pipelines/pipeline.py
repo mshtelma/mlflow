@@ -43,6 +43,8 @@ class _BasePipeline:
         self._pipeline_root_path = pipeline_root_path
         self._profile = profile
         self._name = get_pipeline_name(pipeline_root_path)
+        self._pipeline_config = get_pipeline_config(self._pipeline_root_path, self._profile)
+        self._resolve_pipeline_step_classes()
         self._steps = self._resolve_pipeline_steps()
 
     @experimental
@@ -161,13 +163,22 @@ class _BasePipeline:
         """
         pass
 
+    def _resolve_pipeline_step_classes(self):
+        step_dict = {
+            step.name: f"{step.__class__.__module__}.{step.__class__.__qualname__}"
+            for step in self._resolve_pipeline_steps()
+        }
+        for step_name, step in self._pipeline_config.get("steps").items():
+            if step.get("uses") is None:
+                step["uses"] = step_dict.get(step_name)
+
     def _resolve_pipeline_steps(self) -> List[BaseStep]:
         """
         Constructs and returns all pipeline step objects from the pipeline configuration.
         """
-        pipeline_config = get_pipeline_config(self._pipeline_root_path, self._profile)
+        # pipeline_config = get_pipeline_config(self._pipeline_root_path, self._profile)
         return [
-            s.from_pipeline_config(pipeline_config, self._pipeline_root_path)
+            s.from_pipeline_config(self._pipeline_config, self._pipeline_root_path)
             for s in self._get_step_classes()
         ]
 
